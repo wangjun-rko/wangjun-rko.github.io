@@ -1,0 +1,223 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta name="generator" content="Hexo 3.8.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="技术学习博客"><title>git常用命令 | 学而时习之</title><link rel="stylesheet" type="text/css" href="//fonts.loli.net/css?family=Source+Code+Pro"><link rel="stylesheet" type="text/css" href="/css/style.css?v=2.0.3"><link rel="stylesheet" type="text/css" href="/css/highlight.css?v=2.0.3"><link rel="Shortcut Icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">git常用命令</h1><a id="logo" href="/.">学而时习之</a><p class="description">梦在翱翔，心在路上；关于学习，贵在坚持！</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div><div id="search-form"><div id="result-mask" class="hide"></div><label><input id="search-key" type="text" autocomplete="off" placeholder="搜索"></label><div id="result-wrap" class="hide"><div id="search-result"></div></div><div class="hide"><template id="search-tpl"><div class="item"><a href="/{path}" title="{title}"><div class="title">{title}</div><div class="time">{date}</div><div class="tags">{tags}</div></a></div></template></div></div></div><div id="layout" class="layout-g"><div class="layout-l"><div class="content_container"><div class="post"><h1 class="post-title">git常用命令</h1><div class="post-meta"><a href="/2019/05/13/git常用命令/#comments" class="comment-count"></a><p><span class="date">May 13, 2019 | 高珺如</span><span><a href="/categories/其他工具/" class="category">其他工具</a></span></p></div><div class="post-content"><h3 id="git常用命令"><a href="#git常用命令" class="headerlink" title="git常用命令"></a>git常用命令</h3><ol>
+<li>设置提交代码时的用户信息<blockquote>
+<p>$ git config user.name “<code>name</code>“
+$ git config user.email “<code>email</code>“</p>
+</blockquote>
+</li>
+<li>在当前目录新建一个仓库<blockquote>
+<p>$ git init</p>
+</blockquote>
+</li>
+<li>下载一个仓库<blockquote>
+<p>$ git clone <code>url</code></p>
+</blockquote>
+</li>
+<li>添加当前目录的所有变化文件到暂存区<blockquote>
+<p>$ git add .</p>
+</blockquote>
+</li>
+<li>取消添加<blockquote>
+<p>$ git reset HEAD &lt;<code>filename</code>&gt;</p>
+</blockquote>
+</li>
+<li>提交到仓库区<blockquote>
+<p>$ git commit</p>
+</blockquote>
+</li>
+<li>提交暂存区到仓库区<blockquote>
+<p>$ git commit -am [<code>message</code>]</p>
+</blockquote>
+</li>
+<li>修改最后一次提交的信息<blockquote>
+<p>$ git commit –amend -m <code>替换的message</code></p>
+</blockquote>
+</li>
+<li>列出本地分支<blockquote>
+<p>$ git branch</p>
+</blockquote>
+</li>
+<li>列出远端分支<blockquote>
+<p>$ git branch -r</p>
+</blockquote>
+</li>
+<li>列出所有分支<blockquote>
+<p>$ git branch -a</p>
+</blockquote>
+</li>
+<li>查看当前详细分支信息（可看到当前分支与对应的远程追踪分支）<blockquote>
+<p>$ git branch -vv</p>
+</blockquote>
+</li>
+<li>新建一个名为 <code>branch-name</code> 的分支，但依然停留在当前分支<blockquote>
+<p>$ git branch <code>branch-name</code></p>
+</blockquote>
+</li>
+<li>重命名当前[<code>old-branch-name</code>]分支<blockquote>
+<p>$ git branch -m [<code>old-branch-name</code>] <code>new-branch-name</code></p>
+</blockquote>
+</li>
+<li>重命名远程[origin/<code>old-branch-name</code>]分支<blockquote>
+<p>$ git push origin –d <code>old-branch-name</code></p>
+</blockquote>
+</li>
+<li>切换到 <code>branch-name</code> 分支，并更新工作区<blockquote>
+<p>$ git checkout <code>branch-name</code></p>
+</blockquote>
+</li>
+<li>新建并切换到 <code>branch-name</code> 分支<blockquote>
+<p>$ git checkout -b <code>branch-name</code></p>
+</blockquote>
+</li>
+<li>切换到上一个分支<blockquote>
+<p>$ git checkout -</p>
+</blockquote>
+</li>
+<li>新建并切换到连接到指定远程分支的 <code>branch</code> 分支<blockquote>
+<p>$ git checkout origin/<code>branch</code> -b <code>branch</code></p>
+</blockquote>
+</li>
+<li>关联指定本地分支与指定远程分支<blockquote>
+<p>$ git branch –set-upstream-to=origin/<code>remote_branch</code> <code>local_branch</code></p>
+</blockquote>
+</li>
+<li>新建当前分支的远程分支<blockquote>
+<p>git push origin <code>new_branch</code></p>
+</blockquote>
+</li>
+<li>删除分支<ol>
+<li>只能删除已经被合并的分支<blockquote>
+<p>$ git branch -d <code>branch-name</code></p>
+</blockquote>
+</li>
+<li>强制删除<blockquote>
+<p>$ git branch -D <code>branch-name</code></p>
+</blockquote>
+</li>
+<li>删除远程分支<blockquote>
+<p>$ git push origin –delete <code>branch-name</code></p>
+</blockquote>
+</li>
+<li>删除本地的远程分支<blockquote>
+<p>$ git branch -r -D origin/<code>branch-name</code></p>
+</blockquote>
+</li>
+</ol>
+</li>
+<li>变基<blockquote>
+<p>$ git rebase [<code>branch</code>]</p>
+</blockquote>
+</li>
+<li>合并 <code>branch</code> 分支到当前分支<blockquote>
+<p>$ git merge [<code>branch</code>]</p>
+</blockquote>
+</li>
+<li>显示有变更的文件<blockquote>
+<p>$ git status</p>
+</blockquote>
+</li>
+<li>显示当前分支的版本历史<blockquote>
+<p>$ git log</p>
+</blockquote>
+</li>
+<li>显示 commit 历史，以及每次 commit 发生变更的文件<blockquote>
+<p>$ git log –stat</p>
+</blockquote>
+</li>
+<li>搜索提交历史，根据关键词<blockquote>
+<p>$ git log -S <code>keyword</code></p>
+</blockquote>
+</li>
+<li>显示当前分支的最近几次操作<blockquote>
+<p>$ git reflog</p>
+</blockquote>
+</li>
+<li>显示指定文件是谁、何时修改过<blockquote>
+<p>$ git blame [<code>file</code>]</p>
+</blockquote>
+</li>
+<li>显示暂存区和工作区的差异<blockquote>
+<p>$ git diff</p>
+</blockquote>
+</li>
+<li>显示工作区与当前分支最新 commit 之间的差异<blockquote>
+<p>$ git diff HEAD</p>
+</blockquote>
+</li>
+<li>显示两次个分支之间的差异（显示文件内容）<blockquote>
+<p>$ git diff <code>first-branch</code> <code>second-branch</code></p>
+</blockquote>
+</li>
+<li>显示所有远程仓库<blockquote>
+<p>$ git remote -v</p>
+</blockquote>
+</li>
+<li>查看当前远程仓库信息<blockquote>
+<p>$ git remote -vv</p>
+</blockquote>
+</li>
+<li>下载远程仓库的所有变动<blockquote>
+<p>$ git fetch [<code>remote</code>]</p>
+</blockquote>
+</li>
+<li>移除所有在远端已经被删除的远程分支<blockquote>
+<p>$ git fetch -p</p>
+</blockquote>
+</li>
+<li>上传本地 <code>branch</code> 分支到远程 <code>remote</code> 仓库<blockquote>
+<p>$ git push <code>remote</code> <code>branch</code></p>
+</blockquote>
+</li>
+<li>重置 reset<blockquote>
+<p>$ git reset [–<code>mode</code>] [<code>commit</code>] [<code>file</code>]</p>
+<ul>
+<li>mode<ul>
+<li>soft：重置暂存区与工作区[的 <code>file</code>]，[与指定 <code>commit</code> 保持一致]，回退点之前的所有信息都在，只是没显示。</li>
+<li>mixed：默认，重置暂存区[的 <code>file</code>]，[与指定 <code>commit</code> 保持一致]，工作区不变。</li>
+<li>hard：重置暂存区与工作区[的 <code>file</code>]，[与指定 <code>commit</code> 保持一致]，回退点之前的所有信息都删掉。</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+</li>
+<li>储藏所有变更<blockquote>
+<p>$ git stash -a</p>
+</blockquote>
+</li>
+<li>储藏所有变更（带备注）<blockquote>
+<p>$ git stash -a save ‘<code>message</code>‘</p>
+</blockquote>
+</li>
+<li>查看现有的储藏<blockquote>
+<p>$ git stash list</p>
+</blockquote>
+</li>
+<li>恢复最近一次储藏，存储仍在栈上<blockquote>
+<p>$ git stash apply</p>
+</blockquote>
+</li>
+<li>恢复指定储藏，存储仍在栈上<blockquote>
+<p>$ git stash apply stash@{<code>num</code>}</p>
+</blockquote>
+</li>
+<li>删除指定储藏<blockquote>
+<p>$ git stash drop stash@{<code>num</code>}</p>
+</blockquote>
+</li>
+<li>删除所有储藏<blockquote>
+<p>$ git stash clear</p>
+</blockquote>
+</li>
+<li>恢复并删除栈上指定储藏<blockquote>
+<p>$ git stash pop stash@{<code>num</code>}</p>
+</blockquote>
+</li>
+<li>查看当前仓库中的所有未打包的objects和磁盘占用<blockquote>
+<p>$ git count-objects –human-readable</p>
+</blockquote>
+</li>
+<li>从object数据库中删除所有不可达的object<blockquote>
+<p>$ git gc –prune=now –aggressive</p>
+</blockquote>
+</li>
+</ol>
+</div><div class="post-copyright"><blockquote><p>原文作者: 高珺如</p><p>版权声明: 转载请注明出处(必须保留作者署名及链接)</p></blockquote></div><div class="tags"><a href="/tags/git/">git</a></div><div class="post-share"></div><div class="post-nav"><a href="/2019/05/13/jQuery入门/" class="next">jQuery入门</a></div><div id="comments"></div></div></div></div><div class="layout-r"><div id="sidebar"><div class="search-pla"></div><div id="toc" class="widget"><div class="widget-title"><i class="fa fa-fei">文章目录</i></div><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#git常用命令"><span class="toc-text">git常用命令</span></a></li></ol></div><div class="widget"><div class="widget-title"><i class="fa fa-xie"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2019/05/13/git常用命令/">git常用命令</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/13/jQuery入门/">jQuery入门</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/13/单点登录/">单点登录</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/10/正则表达式/">正则表达式</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/10/编码规范及其数据库设计规范/">编码规范及其数据库设计规范</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/10/GoogleJava编程风格指南/">GoogleJava编程风格指南</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-gui"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/专项技术/">专项技术</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/其他工具/">其他工具</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/前端/">前端</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/技术规范/">技术规范</a><span class="category-list-count">2</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-biao"> 标签</i></div><div class="tagcloud"><a href="/tags/git/" style="font-size: 15px;">git</a> <a href="/tags/jQuery/" style="font-size: 15px;">jQuery</a> <a href="/tags/java/" style="font-size: 15px;">java</a> <a href="/tags/单点登录/" style="font-size: 15px;">单点登录</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-archive"> 归档</i></div><ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-you"> 友情链接</i></div><ul></ul><a href="https://github.com/wangjun-rko" title="我的" target="_blank">我的</a><ul></ul><a href="https://hub.docker.com/" title="DOCKER" target="_blank">DOCKER</a></div></div></div></div><a id="totop" href="#top"></a><div id="footer"><div class="footer-info"><p><a href="/about/">联系博主</a></p><p><span> Copyright &copy;<a href="/." rel="nofollow">wangjun.</a></span><span> Theme by<a rel="nofollow" target="_blank" href="https://github.com/chaooo/hexo-theme-BlueLake"> BlueLake.</a></span><span> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a></span></p></div></div></div><script type="text/javascript" src="/js/search.json.js?v=2.0.3"></script><script type="text/javascript" src="/js/toctotop.js?v=2.0.3" async></script></body></html>
