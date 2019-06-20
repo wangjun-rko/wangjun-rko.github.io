@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta name="generator" content="Hexo 3.8.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="技术学习博客"><title>系统内存管理 | 学而时习之</title><link rel="stylesheet" type="text/css" href="//fonts.loli.net/css?family=Source+Code+Pro"><link rel="stylesheet" type="text/css" href="/css/style.css?v=2.0.3"><link rel="stylesheet" type="text/css" href="/css/highlight.css?v=2.0.3"><link rel="Shortcut Icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">系统内存管理</h1><a id="logo" href="/.">学而时习之</a><p class="description">梦在翱翔，心在路上；关于学习，贵在坚持！</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div><div id="search-form"><div id="result-mask" class="hide"></div><label><input id="search-key" type="text" autocomplete="off" placeholder="搜索"></label><div id="result-wrap" class="hide"><div id="search-result"></div></div><div class="hide"><template id="search-tpl"><div class="item"><a href="/{path}" title="{title}"><div class="title">{title}</div><div class="time">{date}</div><div class="tags">{tags}</div></a></div></template></div></div></div><div id="layout" class="layout-g"><div class="layout-l"><div class="content_container"><div class="post"><h1 class="post-title">系统内存管理</h1><div class="post-meta"><a href="/2019/06/20/系统内存管理/#comments" class="comment-count"></a><p><span class="date">Jun 20, 2019 | wangjun</span><span><a href="/categories/架构/" class="category">架构</a></span></p></div><div class="post-content"><h2 id="内存管理"><a href="#内存管理" class="headerlink" title="内存管理"></a>内存管理</h2><ul>
+<li><h4 id="CPU模式"><a href="#CPU模式" class="headerlink" title="CPU模式"></a>CPU模式</h4><ul>
+<li>实模式：直接通过物理地址访问内存。</li>
+<li>保护模式：通过一个地址映射表把虚拟的内存地址转为物理的内存地址，然后再去读取数据。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>操作系统根据CPU模式分为：实模式系统、保护模式系统。</p>
+</blockquote>
+<ul>
+<li><h4 id="实模式下内存管理"><a href="#实模式下内存管理" class="headerlink" title="实模式下内存管理"></a>实模式下内存管理</h4><ul>
+<li>所以软件包括操作系统本身，工作在同一个物理地址，CPU认为它们是同一个程序。</li>
+<li>操作系统分配内存方法：<ul>
+<li>把操作系统内存管理相关的函数地址，放到一个公共的地方，其他软件要申请内存就到这个地方获取内存管理函数并调用。</li>
+<li>把内存管理功能设计为一个中断请求，内存全局有个中断向量表，本质也是在一个公共的地方放一些函数地址。</li>
+<li>上述2个方法实质上一样，只是机制细节有些不同。</li>
+</ul>
+</li>
+<li>操作系统如何运行硬盘上的软件：<ul>
+<li>把软件从硬盘读到内存然后执行。</li>
+<li>软件还没加载到内存的时候，不知自己会在哪里，所以很多涉及到数据、函数的地址没发固定(浮动地址)，所以要在加载到内存时来确定。</li>
+</ul>
+</li>
+<li>实质上就是一个程序被分成了多个片段，实现了程序片段的动态加载而已。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>中断：CPU响应硬件事件的一个机制。当硬件发生了需要CPU处理的事情时就会触发一个中断。</p>
+</blockquote>
+<blockquote>
+<p>中断机制除了响应硬件外也提供了指令允许软件触发中断(软中断)。可以约定某个中断为内存管理，操作系统在初始化时把内存管理函数写到中断向量表的这个地方。</p>
+</blockquote>
+<ul>
+<li><h4 id="保护模式下内存管理"><a href="#保护模式下内存管理" class="headerlink" title="保护模式下内存管理"></a>保护模式下内存管理</h4><ul>
+<li>实模式的2个问题：<ul>
+<li>安全性：系统和软件都运行在一起，相互可以随意修改对方数据等。</li>
+<li>同时可运行的软件数量少：程序代码量大，存储空间需求大。</li>
+</ul>
+</li>
+<li>保护模式下，内存访问不直接通过物理地址，而是基于虚拟内存。 <ul>
+<li>虚拟内存模式下，整个内存空间被分为很多个连续的内存页，每个内存页大小固定。</li>
+<li>CPU访问某个虚拟内存地址中的数据时，先计算出要访问哪个内存页，然后在通过一个地址映射表，把虚拟内存地址转为物理内存地址，然后到物理内存地址读数据。</li>
+<li>地址映射表是一个数组，下表是内存页页号，值是该内存页对应的物理内存首地址。</li>
+</ul>
+</li>
+<li>缺页：某个内存页对应的物理内存地址不存在，没发读取数据。<ul>
+<li>CPU会发起一个缺页的中断请求，这个请求会被操作系统接管。</li>
+<li>操作系统会为这个内存页分配物理内存，并恢复这个内存页的数据。</li>
+<li>如果没有空闲物理内存分配，会选择一个最久没被访问的内存页进行淘汰。</li>
+<li>淘汰前会把这个内存页的数据保存，因为下次CPU访问这个被淘汰的内存页一样会缺页，那时操作系统还要去恢复数据。</li>
+</ul>
+</li>
+<li>通过这个虚拟内存机制，操作系统不需要一下把整个软件装进内存，而是通过缺页中断按需加载。多个软件同时运行的问题解决了。  </li>
+<li>操作系统如何给运行中的软件分配内存：<ul>
+<li>不需额外的机制，反正内存地址是虚拟的。</li>
+<li>系统可以一开始就给软件分配很大的内存，如果不用，什么都不发生。</li>
+<li>一旦使用某个内存页，通过缺页中断分配真正的物理内存给它。</li>
+</ul>
+</li>
+<li>虚拟内存和缺页机制，CPU很好的解决了操作系统和软件的配合关系。<ul>
+<li>运行中的软件就是进程，有自己的地址映射表。所以，虚拟地址并不是全局的，而是每个进程有独立的。 </li>
+<li>保护模式下，操作系统让每个软件感觉自己在独占整个计算机资源，独立的虚拟地址很好的实现了这点，看起来在独享内存资源。</li>
+<li>实模式下浮动地址问题也解决了，软件不需要在加载的时候重新调整CPU指令操作地址。</li>
+</ul>
+</li>
+<li>内存是进程运行的基础资源，保持进程基础资源的独立性，是软件治理的最基础要求。这也是保护模式的名称的由来。 </li>
+</ul>
+</li>
+</ul>
+</div><div class="post-copyright"><blockquote><p>原文作者: wangjun</p><p>版权声明: 转载请注明出处(必须保留作者署名及链接)</p></blockquote></div><div class="tags"><a href="/tags/操作系统/">操作系统</a></div><div class="post-share"></div><div class="post-nav"><a href="/2019/06/10/ZooKeeper基础/" class="next">ZooKeeper基础</a></div><div id="comments"></div></div></div></div><div class="layout-r"><div id="sidebar"><div class="search-pla"></div><div id="toc" class="widget"><div class="widget-title"><i class="fa fa-fei">文章目录</i></div><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#内存管理"><span class="toc-text">内存管理</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#CPU模式"><span class="toc-text">CPU模式</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#实模式下内存管理"><span class="toc-text">实模式下内存管理</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#保护模式下内存管理"><span class="toc-text">保护模式下内存管理</span></a></li></ol></li></ol></div><div class="widget"><div class="widget-title"><i class="fa fa-xie"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2019/06/20/系统内存管理/">系统内存管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/06/10/ZooKeeper基础/">ZooKeeper基础</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/06/05/centos7安装mysql5.7/">centos7安装mysql5.7</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/24/线程中断/">线程中断</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/13/git常用命令/">git常用命令</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/13/jQuery入门/">jQuery入门</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/13/单点登录/">单点登录</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/10/正则表达式/">正则表达式</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/10/GoogleJava编程风格指南/">GoogleJava编程风格指南</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/10/编码规范及其数据库设计规范/">编码规范及其数据库设计规范</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-gui"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/专项技术/">专项技术</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/其他工具/">其他工具</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/前端/">前端</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/平台软件/">平台软件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/技术规范/">技术规范</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/数据库/">数据库</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/架构/">架构</a><span class="category-list-count">1</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-biao"> 标签</i></div><div class="tagcloud"><a href="/tags/java/" style="font-size: 15px;">java</a> <a href="/tags/ZooKeeper/" style="font-size: 15px;">ZooKeeper</a> <a href="/tags/git/" style="font-size: 15px;">git</a> <a href="/tags/jQuery/" style="font-size: 15px;">jQuery</a> <a href="/tags/操作系统/" style="font-size: 15px;">操作系统</a> <a href="/tags/单点登录/" style="font-size: 15px;">单点登录</a> <a href="/tags/mysql/" style="font-size: 15px;">mysql</a> <a href="/tags/线程/" style="font-size: 15px;">线程</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-archive"> 归档</i></div><ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-you"> 友情链接</i></div><ul></ul><a href="https://github.com/wangjun-rko" title="我的" target="_blank">我的</a><ul></ul><a href="https://hub.docker.com/" title="DOCKER" target="_blank">DOCKER</a></div></div></div></div><a id="totop" href="#top"></a><div id="footer"><div class="footer-info"><p><a href="/about/">联系博主</a></p><p><span> Copyright &copy;<a href="/." rel="nofollow">wangjun.</a></span><span> Theme by<a rel="nofollow" target="_blank" href="https://github.com/chaooo/hexo-theme-BlueLake"> BlueLake.</a></span><span> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a></span></p></div></div></div><script type="text/javascript" src="/js/search.json.js?v=2.0.3"></script><script type="text/javascript" src="/js/toctotop.js?v=2.0.3" async></script></body></html>
