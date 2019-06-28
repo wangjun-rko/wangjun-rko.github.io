@@ -1,0 +1,61 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta name="generator" content="Hexo 3.8.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="技术学习博客"><title>MySql中SQL语句执行慢的原因 | 学而时习之</title><link rel="stylesheet" type="text/css" href="//fonts.loli.net/css?family=Source+Code+Pro"><link rel="stylesheet" type="text/css" href="/css/style.css?v=2.0.3"><link rel="stylesheet" type="text/css" href="/css/highlight.css?v=2.0.3"><link rel="Shortcut Icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">MySql中SQL语句执行慢的原因</h1><a id="logo" href="/.">学而时习之</a><p class="description">梦在翱翔，心在路上；关于学习，贵在坚持！</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div><div id="search-form"><div id="result-mask" class="hide"></div><label><input id="search-key" type="text" autocomplete="off" placeholder="搜索"></label><div id="result-wrap" class="hide"><div id="search-result"></div></div><div class="hide"><template id="search-tpl"><div class="item"><a href="/{path}" title="{title}"><div class="title">{title}</div><div class="time">{date}</div><div class="tags">{tags}</div></a></div></template></div></div></div><div id="layout" class="layout-g"><div class="layout-l"><div class="content_container"><div class="post"><h1 class="post-title">MySql中SQL语句执行慢的原因</h1><div class="post-meta"><a href="/2019/06/28/MySql中SQL语句执行慢的原因/#comments" class="comment-count"></a><p><span class="date">Jun 28, 2019 | wangjun</span><span><a href="/categories/数据库/" class="category">数据库</a></span></p></div><div class="post-content"><h3 id="一、分类"><a href="#一、分类" class="headerlink" title="一、分类"></a>一、分类</h3><ul>
+<li>偶尔出现很慢的情况。</li>
+<li>一直都很慢。<h3 id="二、偶尔出现慢的情况"><a href="#二、偶尔出现慢的情况" class="headerlink" title="二、偶尔出现慢的情况"></a>二、偶尔出现慢的情况</h3><h4 id="1、数据库在刷新脏页"><a href="#1、数据库在刷新脏页" class="headerlink" title="1、数据库在刷新脏页"></a>1、数据库在刷新脏页</h4></li>
+<li>插入或更新一条数据的时候，数据库会在内存中把对应字段的数据更新。</li>
+<li>更新后并不会马上同步持久化到磁盘。</li>
+<li>先写入redo log日志，等空闲的时候通过redo log中的日志把最新的数据同步到磁盘。</li>
+<li>redo log容量是有限的，如果数据库一直繁忙且更新又频繁，redo log很快就会被写满了。</li>
+<li>等不到空闲再同步，只能暂停其他操作，全力同步数据到磁盘。</li>
+<li><strong>导致平时正常的SQL突然变慢。</strong><h4 id="2、拿不到锁"><a href="#2、拿不到锁" class="headerlink" title="2、拿不到锁"></a>2、拿不到锁</h4></li>
+<li>执行的SQL语句涉及到的表被使用且加了锁，只能等待别人释放锁。</li>
+<li>表没有加锁，但是要用到的某一行被加了锁，只能等待别人释放锁。</li>
+<li>可以用<strong>show processlist</strong>命令来查看当前的状态。<h3 id="三、一直都很慢"><a href="#三、一直都很慢" class="headerlink" title="三、一直都很慢"></a>三、一直都很慢</h3><h4 id="1、没用到索引"><a href="#1、没用到索引" class="headerlink" title="1、没用到索引"></a>1、没用到索引</h4></li>
+<li>字段没有索引。</li>
+<li>字段有索引，但没用到索引。<ul>
+<li>在字段的左边做了运算。</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> * <span class="keyword">from</span> t <span class="keyword">where</span> t.xx<span class="number">-1</span>=<span class="number">8</span>; <span class="comment">#不走索引</span></span><br><span class="line"><span class="keyword">select</span> * <span class="keyword">from</span> t <span class="keyword">where</span> t.xx=<span class="number">8</span>+<span class="number">1</span>; <span class="comment">#走索引</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>函数操作导致没用到索引。<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> * <span class="keyword">from</span> t <span class="keyword">where</span> <span class="keyword">mod</span>(t.xx,<span class="number">2</span>)=<span class="number">1</span>; <span class="comment">#不走索引</span></span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h4 id="2、数据库选错索引"><a href="#2、数据库选错索引" class="headerlink" title="2、数据库选错索引"></a>2、数据库选错索引</h4><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> * <span class="keyword">from</span> t <span class="keyword">where</span> <span class="number">100</span>&lt;t.xx <span class="keyword">and</span> t.xx &lt; <span class="number">10000</span>;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>主键索引和非主键索引有区别。<ul>
+<li>主键索引存放的值是整行字段的数据。</li>
+<li>非主键索引存放的值是主键字段的值。</li>
+</ul>
+</li>
+<li>如果走t.xx这个字段的索引，最后会查询到对应主键的值，然后再根据主键的值走主键索引，查询整行数据返回。</li>
+<li>系统执行这条语句的时候，会进行预测：看看是走字段索引扫描的行数少还是直接扫描全表扫描的行数少。<ul>
+<li>扫描行数越少，I/O次数越少，查询越快。</li>
+<li>扫描全表的扫描次数就是这个表的总行数，假设为m。</li>
+<li>走t.xx索引的话，通过索引找到主键，再通过主键来找数据，需要走2次索引。</li>
+<li>假如全表的数据都符合100&lt;t.xx and t.xx &lt; 10000这个条件，意味着不仅扫描的行数是m，且每行数据还得走2次索引。</li>
+</ul>
+</li>
+<li>系统通过<strong>索引的区分度</strong>来判断。<ul>
+<li>一个索引上不同的值越多，意味着出现相同数值的索引越少，索引的区分度越高。</li>
+<li>区分度也称之为<strong>基数</strong>。</li>
+<li>基数越大意味着走索引越有优势。</li>
+</ul>
+</li>
+<li>系统通过<strong>采样</strong>的方式来预测索引的基数。<ul>
+<li>采样可能出现失误。</li>
+<li>采样的那一部分数据刚好基数很小，误以为索引基数很小。</li>
+<li>系统不走t.xx字段索引，走全表扫描。<blockquote>
+<p>系统判断是否走索引，扫描行数的预测只是原因之一，SQL语句是否使用临时表、是否需要排序等也会影响系统的选择。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li>强制走索引查询。<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> * <span class="keyword">from</span> t <span class="keyword">force</span> <span class="keyword">index</span>(a) <span class="keyword">where</span> <span class="number">100</span>&lt;t.xx <span class="keyword">and</span> t.xx &lt; <span class="number">10000</span>; </span><br><span class="line"><span class="keyword">show</span> <span class="keyword">index</span> <span class="keyword">from</span> t; <span class="comment">#查询索引的基数和实际是否符合</span></span><br><span class="line"><span class="keyword">analyze</span> <span class="keyword">table</span> t; <span class="comment">#如果和实际很不符合，重新统计分析</span></span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+</div><div class="post-copyright"><blockquote><p>原文作者: wangjun</p><p>版权声明: 转载请注明出处(必须保留作者署名及链接)</p></blockquote></div><div class="tags"><a href="/tags/mysql/">mysql</a></div><div class="post-share"></div><div class="post-nav"><a href="/2019/06/21/GoogleJava编程风格指南/" class="next">String中的intern</a></div><div id="comments"></div></div></div></div><div class="layout-r"><div id="sidebar"><div class="search-pla"></div><div id="toc" class="widget"><div class="widget-title"><i class="fa fa-fei">文章目录</i></div><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#一、分类"><span class="toc-text">一、分类</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二、偶尔出现慢的情况"><span class="toc-text">二、偶尔出现慢的情况</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1、数据库在刷新脏页"><span class="toc-text">1、数据库在刷新脏页</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2、拿不到锁"><span class="toc-text">2、拿不到锁</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#三、一直都很慢"><span class="toc-text">三、一直都很慢</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1、没用到索引"><span class="toc-text">1、没用到索引</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2、数据库选错索引"><span class="toc-text">2、数据库选错索引</span></a></li></ol></li></ol></div><div class="widget"><div class="widget-title"><i class="fa fa-xie"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2019/06/28/MySql中SQL语句执行慢的原因/">MySql中SQL语句执行慢的原因</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/06/21/GoogleJava编程风格指南/">String中的intern</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/06/20/系统内存管理/">系统内存管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/06/10/ZooKeeper基础/">ZooKeeper基础</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/06/05/centos7安装mysql5.7/">centos7安装mysql5.7</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/24/线程中断/">线程中断</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/13/jQuery入门/">jQuery入门</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/13/git常用命令/">git常用命令</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/13/单点登录/">单点登录</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/10/正则表达式/">正则表达式</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-gui"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/java基础/">java基础</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/专项技术/">专项技术</a><span class="category-list-count">3</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/其他工具/">其他工具</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/前端/">前端</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/平台软件/">平台软件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/技术规范/">技术规范</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/数据库/">数据库</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/架构/">架构</a><span class="category-list-count">1</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-biao"> 标签</i></div><div class="tagcloud"><a href="/tags/git/" style="font-size: 15px;">git</a> <a href="/tags/jQuery/" style="font-size: 15px;">jQuery</a> <a href="/tags/java/" style="font-size: 15px;">java</a> <a href="/tags/线程/" style="font-size: 15px;">线程</a> <a href="/tags/mysql/" style="font-size: 15px;">mysql</a> <a href="/tags/String/" style="font-size: 15px;">String</a> <a href="/tags/ZooKeeper/" style="font-size: 15px;">ZooKeeper</a> <a href="/tags/操作系统/" style="font-size: 15px;">操作系统</a> <a href="/tags/单点登录/" style="font-size: 15px;">单点登录</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-archive"> 归档</i></div><ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-you"> 友情链接</i></div><ul></ul><a href="https://github.com/wangjun-rko" title="我的" target="_blank">我的</a><ul></ul><a href="https://hub.docker.com/" title="DOCKER" target="_blank">DOCKER</a></div></div></div></div><a id="totop" href="#top"></a><div id="footer"><div class="footer-info"><p><a href="/about/">联系博主</a></p><p><span> Copyright &copy;<a href="/." rel="nofollow">wangjun.</a></span><span> Theme by<a rel="nofollow" target="_blank" href="https://github.com/chaooo/hexo-theme-BlueLake"> BlueLake.</a></span><span> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a></span></p></div></div></div><script type="text/javascript" src="/js/search.json.js?v=2.0.3"></script><script type="text/javascript" src="/js/toctotop.js?v=2.0.3" async></script></body></html>
