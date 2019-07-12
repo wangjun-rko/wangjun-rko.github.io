@@ -1,0 +1,97 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta name="generator" content="Hexo 3.8.0"><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="技术学习博客"><title>分布式锁 | 学而时习之</title><link rel="stylesheet" type="text/css" href="//fonts.loli.net/css?family=Source+Code+Pro"><link rel="stylesheet" type="text/css" href="/css/style.css?v=2.0.3"><link rel="stylesheet" type="text/css" href="/css/highlight.css?v=2.0.3"><link rel="Shortcut Icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">分布式锁</h1><a id="logo" href="/.">学而时习之</a><p class="description">梦在翱翔，心在路上；关于学习，贵在坚持！</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a></div><div id="search-form"><div id="result-mask" class="hide"></div><label><input id="search-key" type="text" autocomplete="off" placeholder="搜索"></label><div id="result-wrap" class="hide"><div id="search-result"></div></div><div class="hide"><template id="search-tpl"><div class="item"><a href="/{path}" title="{title}"><div class="title">{title}</div><div class="time">{date}</div><div class="tags">{tags}</div></a></div></template></div></div></div><div id="layout" class="layout-g"><div class="layout-l"><div class="content_container"><div class="post"><h1 class="post-title">分布式锁</h1><div class="post-meta"><a href="/2019/07/12/分布式锁/#comments" class="comment-count"></a><p><span class="date">Jul 12, 2019 | wangjun</span><span><a href="/categories/架构/" class="category">架构</a></span></p></div><div class="post-content"><h3 id="为什么要用分布式锁"><a href="#为什么要用分布式锁" class="headerlink" title="为什么要用分布式锁"></a>为什么要用分布式锁</h3><ul>
+<li>2个系统部署在不同的机器，访问共同的资源。</li>
+<li>运行在不同的JVM里面，加的锁只对属于自己JVM的线程有效。</li>
+<li>Java提供的原生锁机制在多机部署场景下失效了。</li>
+</ul>
+<h3 id="基于Redis实现的分布式锁"><a href="#基于Redis实现的分布式锁" class="headerlink" title="基于Redis实现的分布式锁"></a>基于Redis实现的分布式锁</h3><ul>
+<li>在redis中设置一个值表示加了锁，释放锁的时候就把这个key删除。</li>
+<li>一定要用SET key value NX PX milliseconds 命令<ul>
+<li>如果不用，先设置了值再设置过期时间，就不是原子性操作了，有可能在设置过期时间之前宕机，会造成死锁(key永久存在)。</li>
+</ul>
+</li>
+<li>value要具有唯一性<ul>
+<li>为了在解锁的时候，需要验证value和加锁的一致才删除key。</li>
+</ul>
+</li>
+<li>单机模式<ul>
+<li>存在单点问题，只要redis故障，加锁就不行了。</li>
+</ul>
+</li>
+<li>master-slave模式<ul>
+<li>加锁的时候只对一个节点加锁，即便通过sentinel做了高可用，但是如果master节点故障了，发生主从切换，此时就会有可能出现锁丢失的问题。</li>
+</ul>
+</li>
+<li>redis cluster模式<ul>
+<li>获取当前时间戳，单位是毫秒。</li>
+<li>轮流尝试在每个master节点上创建锁，过期时间设置较短，一般就几十毫秒。</li>
+<li>尝试在大多数节点上建立一个锁，比如5个节点就要求是3个节点（n / 2 +1）。</li>
+<li>客户端计算建立好锁的时间，如果建立锁的时间小于超时时间，就算建立成功了。</li>
+<li>要是锁建立失败了，那么就依次删除这个锁。</li>
+<li>只要别人建立了一把分布式锁，你就得不断轮询去尝试获取锁。</li>
+</ul>
+</li>
+<li>Redisson开源框架<ul>
+<li>只需要通过它的api中的lock和unlock即可完成分布式锁。</li>
+<li>所有指令都通过lua脚本执行，redis支持lua脚本原子性执行。</li>
+<li>有一个watchdog的概念，翻译过来就是看门狗，它会在你获取锁之后，每隔10秒帮你把key的超时时间设为30s。这样的话，就算一直持有锁也不会出现key过期了，其他线程获取到锁的问题了。</li>
+<li>“看门狗”逻辑保证了没有死锁发生。如果机器宕机了，看门狗也就没了。此时就不会延长key的过期时间，到了30s之后就会自动过期了，其他线程可以获取到锁。</li>
+<li>提供了对redlock算法的支持。</li>
+</ul>
+</li>
+</ul>
+<h3 id="基于zookeeper实现的分布式锁"><a href="#基于zookeeper实现的分布式锁" class="headerlink" title="基于zookeeper实现的分布式锁"></a>基于zookeeper实现的分布式锁</h3><ul>
+<li>Zookeeper是一种提供配置管理、分布式协同以及命名的中心化服务。</li>
+<li>Zookeeper包含一系列的节点，叫做znode，就好像文件系统一样每个znode表示一个目录，然后znode有一些特性：<ul>
+<li>有序节点：如果是第一个创建的子节点，那么生成的子节点为/lock/node-0000000000，下一个节点则为/lock/node-0000000001，依次类推。</li>
+<li>临时节点：客户端可以建立一个临时节点，在会话结束或者会话超时后，zookeeper会自动删除该节点。</li>
+<li>事件监听：在读取数据时，我们可以同时对节点设置事件监听，当节点数据或结构变化时，zookeeper会通知客户端。当前zookeeper有如下四种事件：<ul>
+<li>节点创建</li>
+<li>节点删除</li>
+<li>节点数据修改</li>
+<li>子节点变更</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Zookeeper实现分布式锁的落地方案：<ul>
+<li>使用zk的临时节点和有序节点，每个线程获取锁就是在zk创建一个临时有序的节点，比如在/lock/目录下。</li>
+<li>创建节点成功后，获取/lock目录下的所有临时节点，再判断当前线程创建的节点是否是所有的节点的序号最小的节点。</li>
+<li>如果当前线程创建的节点是所有节点序号最小的节点，则认为获取锁成功。</li>
+<li>如果当前线程创建的节点不是所有节点序号最小的节点，则对节点序号的前一个节点添加一个事件监听。比如当前线程获取到的节点序号为/lock/003,然后所有的节点列表为[/lock/001,/lock/002,/lock/003],则对/lock/002这个节点添加一个事件监听器。</li>
+<li>如果锁释放了，会唤醒下一个序号的节点，然后重新执行第3步，判断是否自己的节点序号是最小。比如/lock/001释放了，/lock/002监听到时间，此时节点集合为[/lock/002,/lock/003],则/lock/002为最小序号节点，获取到锁。</li>
+</ul>
+</li>
+<li>Curator<ul>
+<li>一个zookeeper的开源客户端，也提供了分布式锁的实现。</li>
+<li>底层原理和上面分析的是差不多的。</li>
+</ul>
+</li>
+</ul>
+<h3 id="两种方案的优缺点比较"><a href="#两种方案的优缺点比较" class="headerlink" title="两种方案的优缺点比较"></a>两种方案的优缺点比较</h3><ul>
+<li>redis的分布式锁缺点：<ul>
+<li>获取锁的方式简单粗暴，获取不到锁直接不断尝试获取锁，比较消耗性能。</li>
+<li>redis的设计定位决定了它的数据并不是强一致性的，在某些极端情况下，可能会出现问题。锁的模型不够健壮。</li>
+<li>即便使用redlock算法来实现，在某些复杂场景下，也无法保证其实现100%没有问题。</li>
+</ul>
+</li>
+<li>redis的分布式锁优势：<ul>
+<li>redis的性能很高，可以支撑高并发的获取、释放锁操作。</li>
+<li>在很多企业中非常常见，而且大部分情况下都不会遇到所谓的“极端复杂场景”。</li>
+</ul>
+</li>
+<li>zookeeper的分布式锁优势：<ul>
+<li>zookeeper天生设计定位就是分布式协调，强一致性。锁的模型健壮、简单易用、适合做分布式锁。</li>
+<li>如果获取不到锁，只需要添加一个监听器就可以了，不用一直轮询，性能消耗较小。</li>
+</ul>
+</li>
+<li>zookeeper的分布式锁缺点：<ul>
+<li>如果有较多的客户端频繁的申请加锁、释放锁，对于zk集群的压力会比较大。</li>
+</ul>
+</li>
+</ul>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><ul>
+<li>redis和zookeeper都有其优缺点。我们在做技术选型的时候可以根据这些问题作为参考因素。</li>
+<li>如果公司里面有zookeeper集群条件，优先选用zookeeper实现。</li>
+<li>系统已经有redis，但是又不希望再次引入一些外部依赖的情况下，可以选用redis。</li>
+</ul>
+</div><div class="tags"><a href="/tags/分布式/">分布式</a></div><div class="post-share"></div><div class="post-nav"><a href="/2019/07/05/ThreadLocal那些事儿/" class="next">ThreadLocal那些事儿</a></div><div id="comments"></div></div></div></div><div class="layout-r"><div id="sidebar"><div class="search-pla"></div><div id="toc" class="widget"><div class="widget-title"><i class="fa fa-fei">文章目录</i></div><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#为什么要用分布式锁"><span class="toc-text">为什么要用分布式锁</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基于Redis实现的分布式锁"><span class="toc-text">基于Redis实现的分布式锁</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#基于zookeeper实现的分布式锁"><span class="toc-text">基于zookeeper实现的分布式锁</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#两种方案的优缺点比较"><span class="toc-text">两种方案的优缺点比较</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#小结"><span class="toc-text">小结</span></a></li></ol></div><div class="widget"><div class="widget-title"><i class="fa fa-xie"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2019/07/12/分布式锁/">分布式锁</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/07/05/ThreadLocal那些事儿/">ThreadLocal那些事儿</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/07/02/LRU算法/">LRU算法</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/06/28/MySql中SQL语句执行慢的原因/">MySql中SQL语句执行慢的原因</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/06/21/GoogleJava编程风格指南/">String中的intern</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/06/20/系统内存管理/">系统内存管理</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/06/10/ZooKeeper基础/">ZooKeeper基础</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/06/05/centos7安装mysql5.7/">centos7安装mysql5.7</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/24/线程中断/">线程中断</a></li><li class="post-list-item"><a class="post-list-link" href="/2019/05/13/git常用命令/">git常用命令</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-gui"> 分类</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/java基础/">java基础</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/专项技术/">专项技术</a><span class="category-list-count">4</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/其他工具/">其他工具</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/前端/">前端</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/平台软件/">平台软件</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/技术规范/">技术规范</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/数据库/">数据库</a><span class="category-list-count">2</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/数据结构/">数据结构</a><span class="category-list-count">1</span></li><li class="category-list-item"><a class="category-list-link" href="/categories/架构/">架构</a><span class="category-list-count">2</span></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-biao"> 标签</i></div><div class="tagcloud"><a href="/tags/java/" style="font-size: 15px;">java</a> <a href="/tags/jQuery/" style="font-size: 15px;">jQuery</a> <a href="/tags/String/" style="font-size: 15px;">String</a> <a href="/tags/mysql/" style="font-size: 15px;">mysql</a> <a href="/tags/线程/" style="font-size: 15px;">线程</a> <a href="/tags/git/" style="font-size: 15px;">git</a> <a href="/tags/ZooKeeper/" style="font-size: 15px;">ZooKeeper</a> <a href="/tags/操作系统/" style="font-size: 15px;">操作系统</a> <a href="/tags/分布式/" style="font-size: 15px;">分布式</a> <a href="/tags/算法/" style="font-size: 15px;">算法</a> <a href="/tags/单点登录/" style="font-size: 15px;">单点登录</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-archive"> 归档</i></div><ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/07/">七月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/06/">六月 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">五月 2019</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-you"> 友情链接</i></div><ul></ul><a href="https://github.com/wangjun-rko" title="github" target="_blank">github</a><ul></ul><a href="https://hub.docker.com/" title="DOCKER" target="_blank">DOCKER</a></div></div></div></div><a id="totop" href="#top"></a><div id="footer"><div class="footer-info"><p><a href="/about/">联系博主</a></p><p><span> Copyright &copy;<a href="/." rel="nofollow">wangjun.</a></span><span> Theme by<a rel="nofollow" target="_blank" href="https://github.com/chaooo/hexo-theme-BlueLake"> BlueLake.</a></span><span> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a></span></p></div></div></div><script type="text/javascript" src="/js/search.json.js?v=2.0.3"></script><script type="text/javascript" src="/js/toctotop.js?v=2.0.3" async></script></body></html>
